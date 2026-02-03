@@ -12,25 +12,19 @@ import android.widget.TextView
 
 class IslandService : Service() {
 
-    companion object {
-        var updateText: ((String) -> Unit)? = null
-    }
-
     private lateinit var windowManager: WindowManager
     private lateinit var islandView: View
+    private lateinit var islandText: TextView
 
     override fun onCreate() {
         super.onCreate()
 
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
+
         islandView = LayoutInflater.from(this)
-            .inflate(R.layout.island_layout, null)
+            .inflate(R.layout.island_view, null)
 
-        val textView = islandView.findViewById<TextView>(R.id.islandText)
-
-        updateText = { text ->
-            textView.text = text
-        }
+        islandText = islandView.findViewById(R.id.islandText)
 
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.WRAP_CONTENT,
@@ -41,14 +35,23 @@ class IslandService : Service() {
         )
 
         params.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-        params.y = 40   // notch ke paas position
+        params.y = 80
 
         windowManager.addView(islandView, params)
     }
 
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val title = intent?.getStringExtra("title") ?: "Music Playing"
+        val text = intent?.getStringExtra("text") ?: ""
+        islandText.text = "$title  $text"
+        return START_STICKY
+    }
+
     override fun onDestroy() {
         super.onDestroy()
-        windowManager.removeView(islandView)
+        if (::islandView.isInitialized) {
+            windowManager.removeView(islandView)
+        }
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
